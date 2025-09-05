@@ -1,3 +1,48 @@
+// TypeScript augmentation for WebUSB API
+interface USBDevice {
+  open(): Promise<void>;
+  selectConfiguration(configurationValue: number): Promise<void>;
+  claimInterface(interfaceNumber: number): Promise<void>;
+  transferOut(
+    endpointNumber: number,
+    data: BufferSource
+  ): Promise<USBOutTransferResult>;
+  close(): Promise<void>;
+  readonly configuration: USBConfiguration | null;
+}
+
+interface USBConfiguration {
+  readonly interfaces: ReadonlyArray<USBInterface>;
+}
+
+interface USBInterface {
+  readonly alternate: USBAlternateInterface;
+}
+
+interface USBAlternateInterface {
+  readonly endpoints: ReadonlyArray<USBEndpoint>;
+}
+
+interface USBEndpoint {
+  readonly direction: "in" | "out";
+  readonly endpointNumber: number;
+}
+
+interface USBOutTransferResult {
+  readonly bytesWritten: number;
+  readonly status: "ok" | "stall";
+}
+
+type USB = {
+  requestDevice(options: { filters: Array<{ vendorId?: number }> }): Promise<USBDevice>;
+};
+
+declare global {
+  interface Navigator {
+    usb: USB;
+  }
+}
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +94,7 @@ const generateZplForItem = (item: Item): string => {
     optionLabel = "PENDENCIA";
     // Draw a circle (Graphic Circle)
     shapeZpl = `
-    ; ============== Círculo ==============
+    ; ============== Círculo ============== 
     ; Centro (406,310) | Diâmetro 220 | Espessura 8
 
     ^FO300,208^GC220,8,B^FS`;
@@ -68,19 +113,19 @@ const generateZplForItem = (item: Item): string => {
 
 ${shapeZpl}
 
-; =============== Texto "DEFEITO" =========
+; =============== Texto "DEFEITO" ========== 
 ^FO0,470
 ^CF0,48
 ^FB812,1,0,C
 ^FD${optionLabel}^FS
 
-; =============== Número (ACELERATO) ==========
+; =============== Número (ACELERATO) ========== 
 ^FO0,610
 ^CF0,120
 ^FB812,1,0,C
 ^FD#${item.acelerato}^FS
 
-; =============== Grau de Reparo ==========
+; =============== Grau de Reparo ========== 
 ^FO0,780
 ^CF0,48
 ^FB812,1,0,C
@@ -96,6 +141,47 @@ ${shapeZpl}
   return zpl;
 };
 
+// Função de impressão via WebUSB
+async function printViaWebUSB(zplCode: string) {
+  try {
+    // 1. Solicita ao usuário para selecionar a impressora Zebra
+    // O vendorId 0x0A5F é comum para impressoras Zebra.
+    const device = await navigator.usb.requestDevice({
+      filters: [{ vendorId: 0x0a5f }],
+    });
+
+    // 2. Abre a conexão com o dispositivo
+    await device.open();
+    await device.selectConfiguration(1);
+    await device.claimInterface(0);
+
+    // 3. Encontra o endpoint de saída (OUT) para enviar dados
+    const endpoint = device.configuration?.interfaces[0].alternate.endpoints.find(
+      (e) => e.direction === "out"
+    );
+
+    if (!endpoint) {
+      throw new Error("Não foi possível encontrar o endpoint da impressora.");
+    }
+
+    // 4. Converte o código ZPL para o formato correto (Uint8Array) e envia
+    const encoder = new TextEncoder();
+    const data = encoder.encode(zplCode);
+    await device.transferOut(endpoint.endpointNumber, data);
+
+    console.log("Impressão enviada com sucesso!");
+    alert("Etiquetas enviadas para a impressora!");
+
+    // 5. Fecha a conexão
+    await device.close();
+
+  } catch (error) {
+    console.error("Erro ao imprimir com WebUSB:", error);
+    alert("Erro ao conectar com a impressora. Verifique se ela está conectada e se você deu a permissão no navegador.");
+  }
+}
+
+
 function App() {
   // Form state
   const [acelerato, setAcelerato] = useState("");
@@ -107,6 +193,7 @@ function App() {
 
   const handleAceleratoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    // Permite apenas números no campo Acelerato
     if (/^\d*$/.test(value)) {
       setAcelerato(value);
     }
@@ -139,28 +226,18 @@ function App() {
     setItems(items.filter((item) => item.id !== id));
   };
 
+  // Nova função handlePrint que usa WebUSB
   const handlePrint = () => {
     if (items.length === 0) {
       alert("Não há itens na lista para imprimir.");
       return;
     }
 
+    // Concatena o ZPL de todos os itens
     const allZpl = items.map(generateZplForItem).join("\n");
 
-    // Create a blob with the ZPL content
-    const blob = new Blob([allZpl], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    // Create a temporary link to trigger the download
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "etiquetas.zpl";
-    document.body.appendChild(a);
-    a.click();
-
-    // Clean up
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Envia o ZPL para a impressora
+    printViaWebUSB(allZpl);
   };
 
   return (
