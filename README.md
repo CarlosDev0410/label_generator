@@ -1,69 +1,59 @@
-# React + TypeScript + Vite
+# Gerador de Etiquetas Acelerato
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este projeto é uma aplicação web desenvolvida para facilitar e agilizar a criação de etiquetas no padrão ZPL (Zebra Programming Language), focada em processos de controle de qualidade e reparo.
 
-Currently, two official plugins are available:
+## 🎯 Objetivos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+O principal objetivo deste sistema é fornecer uma interface gráfica simples e intuitiva para que os usuários possam gerar etiquetas de identificação de forma rápida, sem a necessidade de conhecimento técnico em ZPL. A aplicação visa reduzir o tempo de operação e minimizar erros na criação das etiquetas.
 
-## Expanding the ESLint configuration
+## ✨ Funcionalidades
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Criação de Itens:** Permite adicionar itens a uma lista de impressão, informando o número do Acelerato, o grau de reparo e o tipo de ocorrência (Avaria, Defeito ou Pendência).
+- **Visualização em Lista:** Os itens adicionados são exibidos em uma lista clara e organizada.
+- **Remoção de Itens:** É possível remover itens da lista antes da impressão.
+- **Geração de Arquivo ZPL:** Ao clicar em "IMPRIMIR", o sistema gera um único arquivo `.zpl` contendo o código de todas as etiquetas da lista, pronto para ser enviado a uma impressora Zebra.
+- **Representação Gráfica:** Cada tipo de ocorrência é representado por uma forma geométrica na etiqueta para fácil identificação visual:
+    - **Avaria:** Triângulo
+    - **Defeito:** Quadrado
+    - **Pendência:** Círculo
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Tecnologias Utilizadas
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- **Frontend:**
+    - [React](https://react.dev/)
+    - [TypeScript](https://www.typescriptlang.org/)
+    - [Vite](https://vitejs.dev/)
+- **Estilização:**
+    - [Tailwind CSS](https://tailwindcss.com/)
+    - [shadcn/ui](https://ui.shadcn.com/)
+- **Ícones:**
+    - [Lucide React](https://lucide.dev/)
+- **Linguagem de Impressão:**
+    - ZPL (Zebra Programming Language)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🚀 Como Executar
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/CarlosDev0410/label_generator.git
+    cd label_generator
+    ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3.  **Inicie o servidor de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
+
+    A aplicação estará disponível em `http://localhost:5173`.
+
+## 📜 Scripts Disponíveis
+
+- `npm run dev`: Inicia o ambiente de desenvolvimento.
+- `npm run build`: Compila o projeto para produção.
+- `npm run lint`: Executa o linter para análise de código.
+- `npm run preview`: Inicia um servidor local para visualizar a build de produção.
