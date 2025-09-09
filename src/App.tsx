@@ -141,43 +141,85 @@ ${shapeZpl}
   return zpl;
 };
 
-// Função de impressão via WebUSB
-async function printViaWebUSB(zplCode: string) {
+// Função de impressão via WebUSB (comentada)
+// async function printViaWebUSB(zplCode: string) {
+//   try {
+//     // 1. Solicita ao usuário para selecionar a impressora Zebra
+//     // O vendorId 0x0A5F é comum para impressoras Zebra.
+//     const device = await navigator.usb.requestDevice({
+//       filters: [{ vendorId: 0x0a5f }],
+//     });
+//
+//     // 2. Abre a conexão com o dispositivo
+//     await device.open();
+//     await device.selectConfiguration(1);
+//     await device.claimInterface(0);
+//
+//     // 3. Encontra o endpoint de saída (OUT) para enviar dados
+//     const endpoint = device.configuration?.interfaces[0].alternate.endpoints.find(
+//       (e) => e.direction === "out"
+//     );
+//
+//     if (!endpoint) {
+//       throw new Error("Não foi possível encontrar o endpoint da impressora.");
+//     }
+//
+//     // 4. Converte o código ZPL para o formato correto (Uint8Array) e envia
+//     const encoder = new TextEncoder();
+//     const data = encoder.encode(zplCode);
+//     await device.transferOut(endpoint.endpointNumber, data);
+//
+//     console.log("Impressão enviada com sucesso!");
+//     alert("Etiquetas enviadas para a impressora!");
+//
+//     // 5. Fecha a conexão
+//     await device.close();
+//
+//   } catch (error) {
+//     console.error("Erro ao imprimir com WebUSB:", error);
+//     alert("Erro ao conectar com a impressora. Verifique se ela está conectada e se você deu a permissão no navegador.");
+//   }
+// }
+
+// Função para gerar e baixar PDF a partir do ZPL
+async function saveZplAsPdf(zplCode: string) {
   try {
-    // 1. Solicita ao usuário para selecionar a impressora Zebra
-    // O vendorId 0x0A5F é comum para impressoras Zebra.
-    const device = await navigator.usb.requestDevice({
-      filters: [{ vendorId: 0x0a5f }],
+    // A API do Labelary espera o ZPL no corpo da requisição
+    const response = await fetch("http://api.labelary.com/v1/printers/8dpmm/labels/4x6/0/", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/pdf', // Pede o PDF como resposta
+      },
+      body: zplCode
     });
 
-    // 2. Abre a conexão com o dispositivo
-    await device.open();
-    await device.selectConfiguration(1);
-    await device.claimInterface(0);
-
-    // 3. Encontra o endpoint de saída (OUT) para enviar dados
-    const endpoint = device.configuration?.interfaces[0].alternate.endpoints.find(
-      (e) => e.direction === "out"
-    );
-
-    if (!endpoint) {
-      throw new Error("Não foi possível encontrar o endpoint da impressora.");
+    if (response.ok) {
+      // Converte a resposta em um blob (arquivo)
+      const blob = await response.blob();
+      // Cria uma URL para o blob
+      const url = window.URL.createObjectURL(blob);
+      // Cria um link temporário para o download
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      // Define o nome do arquivo
+      a.download = 'etiqueta.pdf';
+      // Adiciona o link ao corpo do documento
+      document.body.appendChild(a);
+      // Simula o clique no link para iniciar o download
+      a.click();
+      // Remove o link e a URL temporária
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      console.log("PDF gerado e download iniciado!");
+    } else {
+      // Se a API retornar um erro, exibe no console
+      const errorText = await response.text();
+      throw new Error(`Erro da API Labelary: ${errorText}`);
     }
-
-    // 4. Converte o código ZPL para o formato correto (Uint8Array) e envia
-    const encoder = new TextEncoder();
-    const data = encoder.encode(zplCode);
-    await device.transferOut(endpoint.endpointNumber, data);
-
-    console.log("Impressão enviada com sucesso!");
-    alert("Etiquetas enviadas para a impressora!");
-
-    // 5. Fecha a conexão
-    await device.close();
-
   } catch (error) {
-    console.error("Erro ao imprimir com WebUSB:", error);
-    alert("Erro ao conectar com a impressora. Verifique se ela está conectada e se você deu a permissão no navegador.");
+    console.error("Erro ao gerar o PDF:", error);
+    alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.");
   }
 }
 
@@ -235,7 +277,7 @@ function App() {
     
     const allZpl = items.map(generateZplForItem).join("\n");
 
-    printViaWebUSB(allZpl);
+    saveZplAsPdf(allZpl);
   };
 
   return (
@@ -243,7 +285,7 @@ function App() {
       {/* --- HEADER --- */}
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Gerador de Etiquetas</h1>
-        <Button onClick={handlePrint}>IMPRIMIR</Button>
+        <Button onClick={handlePrint}>SALVAR PDF</Button>
       </header>
 
       {/* --- FORM --- */}
