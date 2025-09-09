@@ -184,13 +184,16 @@ ${shapeZpl}
 // Função para gerar e baixar PDF a partir do ZPL
 async function saveZplAsPdf(zplCode: string) {
   try {
+    const formData = new FormData();
+    formData.append('file', zplCode);
+
     // A API do Labelary espera o ZPL no corpo da requisição
-    const response = await fetch("http://api.labelary.com/v1/printers/8dpmm/labels/4x6/0/", {
+    const response = await fetch("https://api.labelary.com/v1/printers/8dpmm/labels/4x6/0/", {
       method: 'POST',
       headers: {
         'Accept': 'application/pdf', // Pede o PDF como resposta
       },
-      body: zplCode
+      body: formData
     });
 
     if (response.ok) {
