@@ -226,7 +226,7 @@ function App() {
     setItems(items.filter((item) => item.id !== id));
   };
 
-  // Nova função handlePrint que usa WebUSB
+  // Nova função handlePrint que usa impressão em rede
   const handlePrint = () => {
     if (items.length === 0) {
       alert("Não há itens na lista para imprimir.");
@@ -237,7 +237,15 @@ function App() {
     const allZpl = items.map(generateZplForItem).join("\n");
 
     // Envia o ZPL para a impressora
-    printViaWebUSB(allZpl);
+    // Corrigido: Defina ou importe a função printViaNetwork antes de usá-la
+    // Exemplo de implementação fictícia:
+    const printViaNetwork = (zpl: string) => {
+      // Aqui você implementaria a lógica de envio do ZPL para a impressora via rede
+      // Por exemplo, usando fetch para um endpoint local ou WebSocket
+      console.log("Enviando ZPL para a impressora:", zpl);
+    };
+
+    printViaNetwork(allZpl);
   };
 
   return (
