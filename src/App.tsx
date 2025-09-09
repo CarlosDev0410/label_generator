@@ -232,20 +232,10 @@ function App() {
       alert("Não há itens na lista para imprimir.");
       return;
     }
-
-    // Concatena o ZPL de todos os itens
+    
     const allZpl = items.map(generateZplForItem).join("\n");
 
-    // Envia o ZPL para a impressora
-    // Corrigido: Defina ou importe a função printViaNetwork antes de usá-la
-    // Exemplo de implementação fictícia:
-    const printViaNetwork = (zpl: string) => {
-      // Aqui você implementaria a lógica de envio do ZPL para a impressora via rede
-      // Por exemplo, usando fetch para um endpoint local ou WebSocket
-      console.log("Enviando ZPL para a impressora:", zpl);
-    };
-
-    printViaNetwork(allZpl);
+    printViaWebUSB(allZpl);
   };
 
   return (
