@@ -76,7 +76,7 @@ function App() {
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-black min-h-screen">
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen">
       {/* --- HEADER --- */}
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Gerador de Etiquetas</h1>
