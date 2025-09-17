@@ -32,6 +32,16 @@ export const generateZplForItem = (item: Item): string => {
     ^FO300,208^GC220,8,B^FS`;
   }
 
+  let freeTextZpl = "";
+  if (item.freeText) {
+    freeTextZpl = `
+; =============== Texto Livre ========== 
+^FO80,850
+^CF0,40
+^TB,652,300,J
+^FD${item.freeText}^FS`;
+  }
+
   // A simple ZPL template
   const zpl = `
 ^XA
@@ -45,28 +55,30 @@ export const generateZplForItem = (item: Item): string => {
 
 ${shapeZpl}
 
-; =============== Texto "DEFEITO" ========== 
-^FO0,470
+; =============== Tipo de Problema ========== 
+^FO0,450
 ^CF0,48
 ^FB812,1,0,C
 ^FD${optionLabel}^FS
 
 ; =============== Número (ACELERATO) ========== 
-^FO0,610
+^FO0,540
 ^CF0,120
 ^FB812,1,0,C
 ^FD#${item.acelerato}^FS
 
 ; =============== Grau de Reparo ========== 
-^FO0,780
+^FO0,690
 ^CF0,48
 ^FB812,1,0,C
 ^FDGRAU DE REPARO:^FS
 
-^FO0,870
+^FO0,750
 ^CF0,60
 ^FB812,1,0,C
 ^FD${item.grau}^FS
+
+${freeTextZpl}
 
 ^XZ`;
 

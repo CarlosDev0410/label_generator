@@ -21,6 +21,7 @@ function App() {
   const [acelerato, setAcelerato] = useState("");
   const [grau, setGrau] = useState([5]);
   const [selectedOption, setSelectedOption] = useState("");
+  const [freeText, setFreeText] = useState("");
 
   // List state
   const [items, setItems] = useState<Item[]>([]);
@@ -49,11 +50,13 @@ function App() {
       avaria: selectedOption === "avaria",
       defeito: selectedOption === "defeito",
       pendencia: selectedOption === "pendencia",
+      freeText: freeText,
     };
     setItems([newItem, ...items]);
     setAcelerato("");
     setGrau([5]);
     setSelectedOption("");
+    setFreeText("");
   };
 
   const handleRemoveItem = (id: number) => {
@@ -100,6 +103,15 @@ function App() {
                   value={acelerato}
                   onChange={handleAceleratoChange}
                   inputMode="numeric"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="freeText">Descrição do Caso (Opcional)</Label>
+                <Input
+                  id="freeText"
+                  placeholder="Digite um a descrição"
+                  value={freeText}
+                  onChange={(e) => setFreeText(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -156,6 +168,7 @@ function App() {
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-sm text-gray-500 dark:text-gray-400">Grau de Reparo: {item.grau}</p>
+                  {item.freeText && <p className="text-sm text-gray-500 dark:text-gray-400">Texto: {item.freeText}</p>}
                   <div className="flex gap-3 mt-2">
                     {item.avaria && <div className="flex items-center gap-1 text-sm"><Triangle className="h-4 w-4 text-yellow-500" /> Avaria</div>}
                     {item.defeito && <div className="flex items-center gap-1 text-sm"><Square className="h-4 w-4 text-red-500" /> Defeito</div>}

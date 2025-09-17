@@ -6,4 +6,5 @@ export type Item = {
   avaria: boolean;
   defeito: boolean;
   pendencia: boolean;
+  freeText?: string;
 };
