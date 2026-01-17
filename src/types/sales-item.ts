@@ -6,4 +6,6 @@ export interface SalesItem {
     priceTo: string;
     installments: string;
     barcode: string;
+    quantity: number;
+    qrcode: string;
 }

@@ -26,7 +26,13 @@ export function SalesLabelGenerator() {
     const [priceTo, setPriceTo] = useState("");
     const [installments, setInstallments] = useState("");
     const [barcode, setBarcode] = useState("");
+    const [qrcode, setQrcode] = useState("");
+    const [quantity, setQuantity] = useState("1");
     const [isLoading, setIsLoading] = useState(false);
+    const [progress, setProgress] = useState({ current: 0, total: 0, action: "" });
+
+    // Helper to sleep between requests
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     // File input ref
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +44,7 @@ export function SalesLabelGenerator() {
     // Auto-calculate installments when priceTo changes
     useEffect(() => {
         if (priceTo) {
-            const price = parseFloat(priceTo.replace(",", "."));
+            const price = parseFloat(priceTo.replace(/\./g, "").replace(",", "."));
             if (!isNaN(price)) {
                 const val = (price / 12).toFixed(2).replace(".", ",");
                 setInstallments(val);
@@ -46,7 +52,7 @@ export function SalesLabelGenerator() {
         }
     }, [priceTo]);
 
-    const handleAddItem = () => {
+    const handleAddItem = async () => {
         if (!productName || !sku || !priceFrom || !priceTo || !barcode) {
             toast({
                 title: "Erro de validação",
@@ -56,29 +62,44 @@ export function SalesLabelGenerator() {
             return;
         }
 
-        const newItem: SalesItem = {
-            id: Date.now(),
-            productName,
-            sku,
-            priceFrom,
-            priceTo,
-            installments,
-            barcode,
-        };
+        setIsLoading(true);
+        try {
+            const newItem: SalesItem = {
+                id: Date.now(),
+                productName,
+                sku,
+                priceFrom,
+                priceTo,
+                installments,
+                barcode,
+                quantity: parseInt(quantity) || 1,
+                qrcode,
+            };
 
-        setItems([newItem, ...items]);
+            setItems([newItem, ...items]);
 
-        setProductName("");
-        setSku("");
-        setPriceFrom("");
-        setPriceTo("");
-        setInstallments("");
-        setBarcode("");
+            setProductName("");
+            setSku("");
+            setPriceFrom("");
+            setPriceTo("");
+            setInstallments("");
+            setBarcode("");
+            setQrcode("");
+            setQuantity("1");
 
-        toast({
-            title: "Item adicionado",
-            description: "O item foi adicionado à lista com sucesso.",
-        });
+            toast({
+                title: "Item adicionado",
+                description: "O item foi adicionado à lista com sucesso.",
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao adicionar",
+                description: "Não foi possível processar o item.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleRemoveItem = (id: number) => {
@@ -101,8 +122,42 @@ export function SalesLabelGenerator() {
 
         setIsLoading(true);
         try {
-            const allZpl = items.map(generateSalesZpl);
-            await saveZplAsPdf(allZpl);
+            // Expand items based on quantity
+            const expandedItems = items.flatMap(item => Array(item.quantity).fill(item));
+            const totalLabels = expandedItems.length;
+            const CHUNK_SIZE = 50;
+            const totalChunks = Math.ceil(totalLabels / CHUNK_SIZE);
+
+            for (let i = 0; i < totalChunks; i++) {
+                const chunkStart = i * CHUNK_SIZE;
+                const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalLabels);
+                const chunkItems = expandedItems.slice(chunkStart, chunkEnd);
+                const chunkZpl = chunkItems.map(generateSalesZpl);
+
+                setProgress({
+                    current: 0,
+                    total: totalChunks,
+                    action: `Preparando PDFs...`
+                });
+
+                await saveZplAsPdf(
+                    chunkZpl,
+                    2.36,
+                    3.15,
+                    `etiquetas_venda_parte_${i + 1}.pdf`,
+                    (curr, tot) => {
+                        setProgress({
+                            current: i + 1,
+                            total: totalChunks,
+                            action: `Gerando parte ${i + 1} de ${totalChunks} (Etiqueta ${curr}/${tot})...`
+                        });
+                    }
+                );
+
+                // Small delay between PDF downloads to avoid browser/API block
+                if (i < totalChunks - 1) await sleep(1000);
+            }
+
             toast({
                 title: "PDF gerado",
                 description: "O arquivo PDF foi gerado com sucesso.",
@@ -125,7 +180,9 @@ export function SalesLabelGenerator() {
                 SKU: "CAD-001",
                 PrecoDe: "1200,00",
                 PrecoPor: "999,00",
-                CodigoBarras: "7891234567890"
+                CodigoBarras: "7891234567890",
+                Quantidade: 1,
+                QRCode: "https://seulink.com"
             }
         ]);
         const wb = XLSX.utils.book_new();
@@ -137,6 +194,7 @@ export function SalesLabelGenerator() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        setIsLoading(true);
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
@@ -155,53 +213,66 @@ export function SalesLabelGenerator() {
                     return;
                 }
 
-                const newItems: SalesItem[] = [];
-                const errors: string[] = [];
+                const processItems = async () => {
+                    const newItems: SalesItem[] = [];
+                    const errors: string[] = [];
 
-                data.forEach((row: any, index: number) => {
-                    const rowNum = index + 2; // +2 considering header and 0-index
-                    if (!row.Produto || !row.SKU || !row.PrecoDe || !row.PrecoPor || !row.CodigoBarras) {
-                        errors.push(`Linha ${rowNum}: Dados incompletos.`);
-                        return;
+                    for (let index = 0; index < data.length; index++) {
+                        const row: any = data[index];
+                        const rowNum = index + 2;
+
+                        setProgress({
+                            current: index + 1,
+                            total: data.length,
+                            action: `Processando item ${index + 1} de ${data.length}...`
+                        });
+
+                        if (!row.Produto || !row.SKU || !row.PrecoDe || !row.PrecoPor || !row.CodigoBarras) {
+                            errors.push(`Linha ${rowNum}: Dados incompletos.`);
+                            continue;
+                        }
+
+                        let installmentsVal = "";
+                        const priceStr = String(row.PrecoPor);
+                        const price = parseFloat(priceStr.replace(/\./g, "").replace(",", "."));
+                        if (!isNaN(price)) {
+                            installmentsVal = (price / 12).toFixed(2).replace(".", ",");
+                        }
+
+                        newItems.push({
+                            id: Date.now() + index,
+                            productName: String(row.Produto),
+                            sku: String(row.SKU),
+                            priceFrom: String(row.PrecoDe),
+                            priceTo: String(row.PrecoPor),
+                            installments: installmentsVal,
+                            barcode: String(row.CodigoBarras),
+                            quantity: parseInt(row.Quantidade) || 1,
+                            qrcode: row.QRCode ? String(row.QRCode) : ""
+                        });
                     }
 
-                    // Auto calculate installments from imported price
-                    let installmentsVal = "";
-                    const priceStr = String(row.PrecoPor);
-                    const price = parseFloat(priceStr.replace(",", "."));
-                    if (!isNaN(price)) {
-                        installmentsVal = (price / 12).toFixed(2).replace(".", ",");
+                    if (newItems.length > 0) {
+                        setItems((prev) => [...newItems, ...prev]);
+                        toast({
+                            title: "Importação concluída",
+                            description: `${newItems.length} itens importados com sucesso.`,
+                        });
                     }
 
-                    newItems.push({
-                        id: Date.now() + index, // unique id offset
-                        productName: String(row.Produto),
-                        sku: String(row.SKU),
-                        priceFrom: String(row.PrecoDe),
-                        priceTo: String(row.PrecoPor),
-                        installments: installmentsVal,
-                        barcode: String(row.CodigoBarras)
-                    });
-                });
+                    if (errors.length > 0) {
+                        const errorMsg = errors.slice(0, 3).join("\n") + (errors.length > 3 ? `\n...e mais ${errors.length - 3} erros.` : "");
+                        toast({
+                            title: `Houve erros em ${errors.length} linhas`,
+                            description: errorMsg,
+                            variant: "destructive",
+                            duration: 5000
+                        });
+                    }
+                    setIsLoading(false);
+                };
 
-                if (newItems.length > 0) {
-                    setItems((prev) => [...newItems, ...prev]);
-                    toast({
-                        title: "Importação concluída",
-                        description: `${newItems.length} itens importados com sucesso.`,
-                    });
-                }
-
-                if (errors.length > 0) {
-                    // Show first 3 errors to avoid huge toast
-                    const errorMsg = errors.slice(0, 3).join("\n") + (errors.length > 3 ? `\n...e mais ${errors.length - 3} erros.` : "");
-                    toast({
-                        title: `Houve erros em ${errors.length} linhas`,
-                        description: errorMsg,
-                        variant: "destructive",
-                        duration: 5000
-                    });
-                }
+                processItems();
 
             } catch (error) {
                 console.error(error);
@@ -274,8 +345,17 @@ export function SalesLabelGenerator() {
                                 >
                                     {isLoading ? (
                                         <>
-                                            <Clock className="w-4 h-4 mr-2 animate-spin" />
-                                            Gerando...
+                                            <div className="flex flex-col items-end">
+                                                <div className="flex items-center">
+                                                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                                                    <span className="text-sm font-medium">{progress.action}</span>
+                                                </div>
+                                                {progress.total > 0 && (
+                                                    <span className="text-[10px] text-muted-foreground mr-1">
+                                                        {progress.current} de {progress.total}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </>
                                     ) : (
                                         <>
@@ -287,6 +367,20 @@ export function SalesLabelGenerator() {
                             </div>
                         </header>
                     </div>
+
+                    {/* PROGRESS BAR - Show when loading */}
+                    {isLoading && progress.total > 0 && (
+                        <div className="col-span-12 -mt-4">
+                            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-primary"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                                    transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {/* FORM - Full Width */}
                     <div className="col-span-12">
@@ -366,10 +460,39 @@ export function SalesLabelGenerator() {
                                                 placeholder="Calculado automaticamente..."
                                             />
                                         </div>
+                                        <div className="space-y-3">
+                                            <Label htmlFor="qrcode">Link do QR Code (Opcional)</Label>
+                                            <Input
+                                                id="qrcode"
+                                                value={qrcode}
+                                                onChange={(e) => setQrcode(e.target.value)}
+                                                placeholder="https://exemplo.com.br"
+                                            />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <Label htmlFor="quantity">Quantidade</Label>
+                                            <Input
+                                                id="quantity"
+                                                type="number"
+                                                min="1"
+                                                value={quantity}
+                                                onChange={(e) => setQuantity(e.target.value)}
+                                                placeholder="1"
+                                            />
+                                        </div>
                                         <div className="flex justify-end pt-2">
-                                            <Button onClick={handleAddItem}>
-                                                <Plus className="w-4 h-4 mr-2" />
-                                                Adicionar Item
+                                            <Button onClick={handleAddItem} disabled={isLoading}>
+                                                {isLoading && progress.total <= 1 ? (
+                                                    <>
+                                                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                                                        Processando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        Adicionar Item
+                                                    </>
+                                                )}
                                             </Button>
                                         </div>
                                     </div>
@@ -417,14 +540,34 @@ export function SalesLabelGenerator() {
                                                     className="rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-200 relative group"
                                                 >
                                                     <div className="space-y-2">
-                                                        <h3 className="font-semibold text-base pr-8 truncate" title={item.productName}>{item.productName}</h3>
+                                                        <div className="flex justify-between items-start">
+                                                            <h3 className="font-semibold text-base pr-4 truncate flex-1" title={item.productName}>{item.productName}</h3>
+                                                            {item.quantity > 1 && (
+                                                                <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap">
+                                                                    x{item.quantity}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div className="flex justify-between text-sm text-muted-foreground">
                                                             <span>SKU: {item.sku}</span>
                                                             <span>{item.barcode}</span>
                                                         </div>
                                                         <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                                            <span className="line-through text-xs text-muted-foreground">R$ {item.priceFrom}</span>
-                                                            <span className="font-bold text-green-600">R$ {item.priceTo}</span>
+                                                            <div className="flex flex-col">
+                                                                <span className="line-through text-xs text-muted-foreground">R$ {item.priceFrom}</span>
+                                                                <span className="font-bold text-green-600">R$ {item.priceTo}</span>
+                                                            </div>
+                                                            {item.qrcode && (
+                                                                <div className="bg-muted p-1 rounded" title={item.qrcode}>
+                                                                    <div className="w-8 h-8 flex items-center justify-center bg-white border border-black/10 rounded-sm">
+                                                                        <div className="w-6 h-6 border-2 border-black rounded-sm relative">
+                                                                            <div className="absolute top-0 left-0 w-1 h-1 bg-black"></div>
+                                                                            <div className="absolute top-0 right-0 w-1 h-1 bg-black"></div>
+                                                                            <div className="absolute bottom-0 left-0 w-1 h-1 bg-black"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <Button
