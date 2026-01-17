@@ -59,7 +59,7 @@ ${qrcodeZpl}
 ^FO20,330^A0N,25,25^FB440,1,0,L,0^FDDe R$ ${priceFromFormatted}^FS
 ^FO20,370^A0N,45,45^FB440,1,0,L,0^FDPor R$ ${priceToFormatted}^FS
 ^FO360,380^A0N,30,30^FB440,1,0,L,0^FD(A vista)^FS
-^FO20,420^A0N,20,20^FB440,2,0,L,0^FDOu em ate 12x de^FS
+^FO20,420^A0N,20,20^FB440,2,0,L,0^FDOu em ate ${item.installmentCount}x de^FS
 ^FO20,450^A0N,20,20^FB440,1,0,L,0^FDR$ ${installmentsFormatted} sem juros^FS
 ^FO10,490^GB460,2,2^FS
 ^FO60,510^BY2,3,100^BCN,100,Y,N,N^FD${item.barcode}^FS

@@ -8,4 +8,5 @@ export interface SalesItem {
     barcode: string;
     quantity: number;
     qrcode: string;
+    installmentCount: number;
 }

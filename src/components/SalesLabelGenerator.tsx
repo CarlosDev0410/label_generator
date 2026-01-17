@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import { X, Plus, FileText, CheckCircle, Clock, Download, Upload, FileSpreadshee
 import type { SalesItem } from "@/types/sales-item";
 import { generateSalesZpl } from "@/lib/zpl";
 import { saveZplAsPdf } from "@/lib/pdf";
+import { formatCurrency } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
 export function SalesLabelGenerator() {
@@ -25,6 +26,7 @@ export function SalesLabelGenerator() {
     const [priceFrom, setPriceFrom] = useState("");
     const [priceTo, setPriceTo] = useState("");
     const [installments, setInstallments] = useState("");
+    const [installmentCount, setInstallmentCount] = useState("10");
     const [barcode, setBarcode] = useState("");
     const [qrcode, setQrcode] = useState("");
     const [quantity, setQuantity] = useState("1");
@@ -40,17 +42,6 @@ export function SalesLabelGenerator() {
     // List state
     const [items, setItems] = useState<SalesItem[]>([]);
     const { toast } = useToast();
-
-    // Auto-calculate installments when priceTo changes
-    useEffect(() => {
-        if (priceTo) {
-            const price = parseFloat(priceTo.replace(/\./g, "").replace(",", "."));
-            if (!isNaN(price)) {
-                const val = (price / 12).toFixed(2).replace(".", ",");
-                setInstallments(val);
-            }
-        }
-    }, [priceTo]);
 
     const handleAddItem = async () => {
         if (!productName || !sku || !priceFrom || !priceTo || !barcode) {
@@ -71,6 +62,7 @@ export function SalesLabelGenerator() {
                 priceFrom,
                 priceTo,
                 installments,
+                installmentCount: parseInt(installmentCount) || 10,
                 barcode,
                 quantity: parseInt(quantity) || 1,
                 qrcode,
@@ -83,6 +75,7 @@ export function SalesLabelGenerator() {
             setPriceFrom("");
             setPriceTo("");
             setInstallments("");
+            setInstallmentCount("10");
             setBarcode("");
             setQrcode("");
             setQuantity("1");
@@ -180,6 +173,8 @@ export function SalesLabelGenerator() {
                 SKU: "CAD-001",
                 PrecoDe: "1200,00",
                 PrecoPor: "999,00",
+                Parcela: "119,00",
+                Vezes: 10,
                 CodigoBarras: "7891234567890",
                 Quantidade: 1,
                 QRCode: "https://seulink.com"
@@ -232,21 +227,15 @@ export function SalesLabelGenerator() {
                             continue;
                         }
 
-                        let installmentsVal = "";
-                        const priceStr = String(row.PrecoPor);
-                        const price = parseFloat(priceStr.replace(/\./g, "").replace(",", "."));
-                        if (!isNaN(price)) {
-                            installmentsVal = (price / 12).toFixed(2).replace(".", ",");
-                        }
-
                         newItems.push({
                             id: Date.now() + index,
-                            productName: String(row.Produto),
-                            sku: String(row.SKU),
-                            priceFrom: String(row.PrecoDe),
-                            priceTo: String(row.PrecoPor),
-                            installments: installmentsVal,
-                            barcode: String(row.CodigoBarras),
+                            productName: String(row.Produto || ""),
+                            sku: String(row.SKU || ""),
+                            priceFrom: String(row.PrecoDe || "0,00"),
+                            priceTo: String(row.PrecoPor || "0,00"),
+                            installments: String(row.Parcela || "0,00"),
+                            installmentCount: parseInt(row.Vezes) || 10,
+                            barcode: String(row.CodigoBarras || ""),
                             quantity: parseInt(row.Quantidade) || 1,
                             qrcode: row.QRCode ? String(row.QRCode) : ""
                         });
@@ -451,14 +440,27 @@ export function SalesLabelGenerator() {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="installments">Valor da Parcela (12x)</Label>
-                                            <Input
-                                                id="installments"
-                                                value={installments}
-                                                onChange={(e) => setInstallments(e.target.value)}
-                                                placeholder="Calculado automaticamente..."
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-3">
+                                                <Label htmlFor="installments">Valor da Parcela (R$)</Label>
+                                                <Input
+                                                    id="installments"
+                                                    value={installments}
+                                                    onChange={(e) => setInstallments(e.target.value)}
+                                                    placeholder="0,00"
+                                                />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <Label htmlFor="installmentCount">Vezes</Label>
+                                                <Input
+                                                    id="installmentCount"
+                                                    type="number"
+                                                    min="1"
+                                                    value={installmentCount}
+                                                    onChange={(e) => setInstallmentCount(e.target.value)}
+                                                    placeholder="10"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="space-y-3">
                                             <Label htmlFor="qrcode">Link do QR Code (Opcional)</Label>
@@ -556,6 +558,7 @@ export function SalesLabelGenerator() {
                                                             <div className="flex flex-col">
                                                                 <span className="line-through text-xs text-muted-foreground">R$ {item.priceFrom}</span>
                                                                 <span className="font-bold text-green-600">R$ {item.priceTo}</span>
+                                                                <span className="text-[10px] text-muted-foreground">{item.installmentCount}x de R$ {item.installments}</span>
                                                             </div>
                                                             {item.qrcode && (
                                                                 <div className="bg-muted p-1 rounded" title={item.qrcode}>
