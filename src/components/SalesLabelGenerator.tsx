@@ -16,7 +16,6 @@ import { X, Plus, FileText, CheckCircle, Clock, Download, Upload, FileSpreadshee
 import type { SalesItem } from "@/types/sales-item";
 import { generateSalesZpl } from "@/lib/zpl";
 import { saveZplAsPdf } from "@/lib/pdf";
-import { formatCurrency } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
 export function SalesLabelGenerator() {
@@ -384,119 +383,113 @@ export function SalesLabelGenerator() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Left Column Fields */}
-                                    <div className="space-y-6">
-                                        <div className="space-y-3">
-                                            <Label htmlFor="productName">Nome do Produto</Label>
-                                            <Input
-                                                id="productName"
-                                                value={productName}
-                                                onChange={(e) => setProductName(e.target.value)}
-                                                placeholder="Ex: Cadeira Gamer..."
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-3">
-                                                <Label htmlFor="sku">SKU / REF</Label>
-                                                <Input
-                                                    id="sku"
-                                                    value={sku}
-                                                    onChange={(e) => setSku(e.target.value)}
-                                                    placeholder="Ex: CAD-001"
-                                                />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <Label htmlFor="barcode">Código de Barras</Label>
-                                                <Input
-                                                    id="barcode"
-                                                    value={barcode}
-                                                    onChange={(e) => setBarcode(e.target.value)}
-                                                    placeholder="Ex: 789..."
-                                                />
-                                            </div>
-                                        </div>
+                                <div className="grid grid-cols-12 gap-6">
+                                    {/* Row 1: Identification and Main Prices */}
+                                    <div className="col-span-12 md:col-span-6 space-y-3">
+                                        <Label htmlFor="productName">Nome do Produto</Label>
+                                        <Input
+                                            id="productName"
+                                            value={productName}
+                                            onChange={(e) => setProductName(e.target.value)}
+                                            placeholder="Ex: Cadeira Gamer..."
+                                        />
+                                    </div>
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="priceFrom">Preço DE (R$)</Label>
+                                        <Input
+                                            id="priceFrom"
+                                            value={priceFrom}
+                                            onChange={(e) => setPriceFrom(e.target.value)}
+                                            placeholder="0,00"
+                                        />
+                                    </div>
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="priceTo">Preço POR (R$)</Label>
+                                        <Input
+                                            id="priceTo"
+                                            value={priceTo}
+                                            onChange={(e) => setPriceTo(e.target.value)}
+                                            placeholder="0,00"
+                                        />
                                     </div>
 
-                                    {/* Right Column Fields */}
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-3">
-                                                <Label htmlFor="priceFrom">Preço DE (R$)</Label>
-                                                <Input
-                                                    id="priceFrom"
-                                                    value={priceFrom}
-                                                    onChange={(e) => setPriceFrom(e.target.value)}
-                                                    placeholder="0,00"
-                                                />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <Label htmlFor="priceTo">Preço POR (R$)</Label>
-                                                <Input
-                                                    id="priceTo"
-                                                    value={priceTo}
-                                                    onChange={(e) => setPriceTo(e.target.value)}
-                                                    placeholder="0,00"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-3">
-                                                <Label htmlFor="installments">Valor da Parcela (R$)</Label>
-                                                <Input
-                                                    id="installments"
-                                                    value={installments}
-                                                    onChange={(e) => setInstallments(e.target.value)}
-                                                    placeholder="0,00"
-                                                />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <Label htmlFor="installmentCount">Vezes</Label>
-                                                <Input
-                                                    id="installmentCount"
-                                                    type="number"
-                                                    min="1"
-                                                    value={installmentCount}
-                                                    onChange={(e) => setInstallmentCount(e.target.value)}
-                                                    placeholder="10"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="qrcode">Link do QR Code (Opcional)</Label>
-                                            <Input
-                                                id="qrcode"
-                                                value={qrcode}
-                                                onChange={(e) => setQrcode(e.target.value)}
-                                                placeholder="https://exemplo.com.br"
-                                            />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="quantity">Quantidade</Label>
-                                            <Input
-                                                id="quantity"
-                                                type="number"
-                                                min="1"
-                                                value={quantity}
-                                                onChange={(e) => setQuantity(e.target.value)}
-                                                placeholder="1"
-                                            />
-                                        </div>
-                                        <div className="flex justify-end pt-2">
-                                            <Button onClick={handleAddItem} disabled={isLoading}>
-                                                {isLoading && progress.total <= 1 ? (
-                                                    <>
-                                                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                                                        Processando...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Plus className="w-4 h-4 mr-2" />
-                                                        Adicionar Item
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
+                                    {/* Row 2: Logic and Installments */}
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="sku">SKU / REF</Label>
+                                        <Input
+                                            id="sku"
+                                            value={sku}
+                                            onChange={(e) => setSku(e.target.value)}
+                                            placeholder="Ex: CAD-001"
+                                        />
+                                    </div>
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="barcode">Código de Barras</Label>
+                                        <Input
+                                            id="barcode"
+                                            value={barcode}
+                                            onChange={(e) => setBarcode(e.target.value)}
+                                            placeholder="Ex: 789..."
+                                        />
+                                    </div>
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="installments">Parcela (R$)</Label>
+                                        <Input
+                                            id="installments"
+                                            value={installments}
+                                            onChange={(e) => setInstallments(e.target.value)}
+                                            placeholder="0,00"
+                                        />
+                                    </div>
+                                    <div className="col-span-6 md:col-span-3 space-y-3">
+                                        <Label htmlFor="installmentCount">Vezes</Label>
+                                        <Input
+                                            id="installmentCount"
+                                            type="number"
+                                            min="1"
+                                            value={installmentCount}
+                                            onChange={(e) => setInstallmentCount(e.target.value)}
+                                            placeholder="10"
+                                        />
+                                    </div>
+
+                                    {/* Row 3: QR Code and Print Quantity */}
+                                    <div className="col-span-12 md:col-span-9 space-y-3">
+                                        <Label htmlFor="qrcode">Link do QR Code (Opcional)</Label>
+                                        <Input
+                                            id="qrcode"
+                                            value={qrcode}
+                                            onChange={(e) => setQrcode(e.target.value)}
+                                            placeholder="https://exemplo.com.br"
+                                        />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-3 space-y-3">
+                                        <Label htmlFor="quantity">Etiquetas</Label>
+                                        <Input
+                                            id="quantity"
+                                            type="number"
+                                            min="1"
+                                            value={quantity}
+                                            onChange={(e) => setQuantity(e.target.value)}
+                                            placeholder="1"
+                                        />
+                                    </div>
+
+                                    {/* Row 4: Action Button */}
+                                    <div className="col-span-12 flex justify-end pt-2">
+                                        <Button onClick={handleAddItem} disabled={isLoading} className="w-full md:w-auto">
+                                            {isLoading && progress.total <= 1 ? (
+                                                <>
+                                                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                                                    Processando...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Adicionar Item
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
                                 </div>
                             </CardContent>
