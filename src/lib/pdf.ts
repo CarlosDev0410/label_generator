@@ -3,12 +3,16 @@ import { PDFDocument } from 'pdf-lib';
 /**
  * Gera e baixa um PDF a partir de uma lista de códigos ZPL.
  * Para garantir que o layout de cada etiqueta seja independente (evitando "drifts" ou deslocamentos),
- * cada código ZPL é enviado individualmente para o Labelary e os PDFs resultantes são mesclados.
+ * Cada código ZPL é enviado individualmente para o Labelary e os PDFs resultantes são mesclados.
+ * 
+ * Tamanhos padrão:
+ * - Vendas: 2.3622 x 3.14961 (60x80mm)
+ * - Logística: 3.93701 x 5.90551 (100x150mm)
  */
 export async function saveZplAsPdf(
   zplCodes: string[],
-  widthInches: number = 2.3622,
-  heightInches: number = 3.14961,
+  widthInches: number = 2.3622, // Padrão: Vendas
+  heightInches: number = 3.14961, // Padrão: Vendas
   fileName: string = 'etiqueta.pdf',
   onProgress?: (current: number, total: number) => void
 ) {

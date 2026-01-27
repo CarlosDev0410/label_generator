@@ -98,7 +98,7 @@ export function LogisticLabelGenerator() {
         setIsLoading(true);
         try {
             const allZpl = items.map(generateZplForItem);
-            await saveZplAsPdf(allZpl);
+            await saveZplAsPdf(allZpl, 3.93701, 5.90551, 'etiquetas_logistica.pdf');
             toast({
                 title: "PDF gerado",
                 description: "O arquivo PDF foi gerado com sucesso.",
