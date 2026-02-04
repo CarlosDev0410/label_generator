@@ -126,9 +126,9 @@ export function SalesLabelGenerator() {
                     priceFrom: String(row.preco_de || row.de || "0,00"),
                     priceTo: String(row.preco_por || row.por || "0,00"),
                     installments: String(row.parcela || "0,00"),
-                    installmentCount: parseInt(row.vezes || "12"),
+                    installmentCount: parseInt(String(row.vezes || "12")),
                     barcode: String(row.ean || row.barcode || ""),
-                    quantity: parseInt(row.quantidade || row.qtd || "1"),
+                    quantity: parseInt(String(row.quantidade || row.qtd || "1")),
                     qrcode: String(row.link || row.qrcode || ""),
                 }));
 
