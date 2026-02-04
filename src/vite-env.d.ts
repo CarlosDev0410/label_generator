@@ -1,2 +1,2 @@
-/// <reference types="vite/client" />
-/// <reference path="./types/webusb.d.ts" />
+import 'vite/client';
+import './types/webusb.d.ts';
