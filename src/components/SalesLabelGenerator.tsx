@@ -165,10 +165,6 @@ export function SalesLabelGenerator() {
 
             {/* Form Section */}
             <Card className="border-none shadow-xl bg-gradient-to-br from-background to-muted/30 overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-8 text-primary/10 pointer-events-none">
-                    <FileSpreadsheet className="w-32 h-32" />
-                </div>
-
                 <CardHeader className="pb-8">
                     <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         Gerador de Etiquetas de Venda
