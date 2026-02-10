@@ -84,7 +84,7 @@ export class WakeService {
             nome: (data.nome as string) || (data.productName as string) || "Produto sem nome",
             precoDe: precoDe,
             precoPor: precoComDesconto, // O "Preço Por" no JSON final reflete o valor à vista com desconto, conforme o front espera
-            ean: (data.ean as string) || (data.barcode as string) || (data.gtin as string) || "",
+            ean: (data.ean as string) || (data.barcode as string) || (data.gtin as string) || "SEM EAN",
             urlProduto: (data.urlProduto as string) || (data.productUrl as string) || "",
             parcela: valorParcela,
             vezes: 12
