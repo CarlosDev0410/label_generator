@@ -22,6 +22,7 @@ function App() {
           <TabsContent value="sales" className="mt-0 border-none outline-none">
             <SalesLabelGenerator />
           </TabsContent>
+
         </Tabs>
       </div>
       <Toaster />

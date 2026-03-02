@@ -32,31 +32,10 @@ export function LogisticLabelGenerator() {
     const [items, setItems] = useState<Item[]>([]);
     const { toast } = useToast();
 
-    const handleAceleratoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        // Permite apenas números no campo Acelerato
-        if (/^\d*$/.test(value)) {
-            setAcelerato(value);
-        }
-    };
+
 
     const handleAddItem = () => {
-        if (!acelerato) {
-            toast({
-                title: "Erro de validação",
-                description: "Por favor, preencha o número do Acelerato.",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (!selectedOption) {
-            toast({
-                title: "Erro de validação",
-                description: "Por favor, selecione uma opção (Avaria, Defeito ou Pendência).",
-                variant: "destructive",
-            });
-            return;
-        }
+
         const newItem: Item = {
             id: Date.now(),
             acelerato,
@@ -171,10 +150,9 @@ export function LogisticLabelGenerator() {
                                                 </Label>
                                                 <Input
                                                     id="acelerato"
-                                                    placeholder="Digite o número"
+                                                    placeholder="Digite o valor"
                                                     value={acelerato}
-                                                    onChange={handleAceleratoChange}
-                                                    inputMode="numeric"
+                                                    onChange={(e) => setAcelerato(e.target.value)}
                                                     className="text-base hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
                                                 />
                                             </div>
