@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Clock } from "lucide-react";
 
 interface SalesFormProps {
@@ -21,6 +22,8 @@ interface SalesFormProps {
     setQrcode: (v: string) => void;
     quantity: string;
     setQuantity: (v: string) => void;
+    is60x40: boolean;
+    setIs60x40: (v: boolean) => void;
     isLoadingProduct: boolean;
     onSkuSearch: (sku: string) => void;
 }
@@ -36,6 +39,7 @@ export function SalesForm(props: SalesFormProps) {
         barcode, setBarcode,
         qrcode, setQrcode,
         quantity, setQuantity,
+        is60x40, setIs60x40,
         isLoadingProduct,
         onSkuSearch
     } = props;
@@ -128,7 +132,7 @@ export function SalesForm(props: SalesFormProps) {
             </div>
 
             {/* Row 3: QR and Quantity */}
-            <div className="col-span-12 md:col-span-9 space-y-3">
+            <div className="col-span-12 md:col-span-6 space-y-3">
                 <Label htmlFor="qrcode">Link QR Code (Opcional)</Label>
                 <Input
                     id="qrcode"
@@ -137,7 +141,7 @@ export function SalesForm(props: SalesFormProps) {
                     placeholder="https://..."
                 />
             </div>
-            <div className="col-span-12 md:col-span-3 space-y-3">
+            <div className="col-span-6 md:col-span-3 space-y-3">
                 <Label htmlFor="quantity">Etiquetas por Item</Label>
                 <Input
                     id="quantity"
@@ -146,6 +150,21 @@ export function SalesForm(props: SalesFormProps) {
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                 />
+            </div>
+            <div className="col-span-6 md:col-span-3 flex flex-col justify-end space-y-3">
+                <div className="flex items-center space-x-2 h-9 mb-0.5">
+                    <Checkbox
+                        id="is60x40"
+                        checked={is60x40}
+                        onCheckedChange={(checked) => setIs60x40(checked as boolean)}
+                    />
+                    <Label
+                        htmlFor="is60x40"
+                        className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                        Formato 60x40
+                    </Label>
+                </div>
             </div>
         </div>
     );
