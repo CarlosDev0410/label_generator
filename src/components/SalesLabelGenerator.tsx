@@ -20,6 +20,7 @@ import { useSalesItems } from "@/hooks/use-sales-items";
 import { ApiService } from "@/services/api.service";
 import { generateSalesZpl } from "@/lib/zpl";
 import { saveZplAsPdf } from "@/lib/pdf";
+import { calculateInstallments, parseFormattedAmount } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import type { SalesItem } from "@/types/sales-item";
 
@@ -51,13 +52,19 @@ export function SalesLabelGenerator() {
             const formatCurrency = (v: number) =>
                 v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+            // precoPor já vem com 7% de desconto aplicado pelo servidor
+            // parcela já vem calculada sobre o preço bruto (sem desconto) pelo servidor
+            // Reconstituímos o preço bruto para calcular quantas parcelas cabem: parcela × vezes
+            const rawPriceFullValue = (product.parcela || 0) * (product.vezes || 12);
+            const { count, value } = calculateInstallments(rawPriceFullValue);
+
             setProductName(product.nome || "");
             setPriceFrom(formatCurrency(product.precoDe || 0));
             setPriceTo(formatCurrency(product.precoPor || 0));
             setBarcode(product.ean || "");
             setQrcode(product.urlProduto || "");
-            setInstallments(formatCurrency(product.parcela || 0));
-            setInstallmentCount(String(product.vezes || 12));
+            setInstallments(value);
+            setInstallmentCount(String(count));
         }
     };
 
@@ -71,13 +78,19 @@ export function SalesLabelGenerator() {
             return;
         }
 
+        // No formulário manual, o usuário digita o preço bruto (sem desconto)
+        // O priceTo é armazenado direto (sem aplicar desconto aqui — o campo já é o valor final)
+        // As parcelas são calculadas sobre o preço bruto digitado
+        const rawPrice = parseFormattedAmount(priceTo);
+        const { count: calcCount, value: calcValue } = calculateInstallments(rawPrice);
+
         addItem({
             productName,
             sku,
             priceFrom,
             priceTo,
-            installments,
-            installmentCount: parseInt(installmentCount) || 12,
+            installments: calcValue,
+            installmentCount: calcCount,
             barcode,
             quantity: parseInt(quantity) || 1,
             qrcode,
@@ -166,18 +179,22 @@ export function SalesLabelGenerator() {
                     await processBatchImport(jsonData);
                 } else {
                     // MODO CLÁSSICO: Planilha completa → importa direto
-                    const importedItems: SalesItem[] = jsonData.map((row) => ({
-                        id: Date.now() + Math.random(),
-                        productName: String(row.nome || row.produto || ""),
-                        sku: String(row.sku || row.ref || ""),
-                        priceFrom: String(row.preco_de || row.de || "0,00"),
-                        priceTo: String(row.preco_por || row.por || "0,00"),
-                        installments: String(row.parcela || "0,00"),
-                        installmentCount: parseInt(String(row.vezes || "12")),
-                        barcode: String(row.ean || row.barcode || ""),
-                        quantity: parseInt(String(row.quantidade || row.qtd || "1")),
-                        qrcode: String(row.link || row.qrcode || ""),
-                    }));
+                    const importedItems: SalesItem[] = jsonData.map((row) => {
+                        const rawPrice = parseFormattedAmount(String(row.preco_por || row.por || "0"));
+                        const { count: iCount, value: iValue } = calculateInstallments(rawPrice);
+                        return {
+                            id: Date.now() + Math.random(),
+                            productName: String(row.nome || row.produto || ""),
+                            sku: String(row.sku || row.ref || ""),
+                            priceFrom: String(row.preco_de || row.de || "0,00"),
+                            priceTo: String(row.preco_por || row.por || "0,00"),
+                            installments: iValue,
+                            installmentCount: iCount,
+                            barcode: String(row.ean || row.barcode || ""),
+                            quantity: parseInt(String(row.quantidade || row.qtd || "1")),
+                            qrcode: String(row.link || row.qrcode || ""),
+                        };
+                    });
 
                     setItems([...importedItems, ...items]);
                     toast({ title: "Importação concluída", description: `${importedItems.length} itens importados.` });
@@ -218,14 +235,18 @@ export function SalesLabelGenerator() {
             const results = await Promise.allSettled(
                 chunk.map(async ({ sku, quantity }) => {
                     const product = await ApiService.fetchWakeProduct(sku);
+                    // precoPor já vem com desconto do servidor; reconstituímos o bruto via parcela×vezes
+                    const rawBatchPrice = (product.parcela || 0) * (product.vezes || 12);
+                    const { count: batchCount, value: batchValue } = calculateInstallments(rawBatchPrice);
+
                     return {
                         id: Date.now() + Math.random(),
                         productName: product.nome || "Produto sem nome",
                         sku: product.sku || sku,
                         priceFrom: formatCurrency(product.precoDe || 0),
                         priceTo: formatCurrency(product.precoPor || 0),
-                        installments: formatCurrency(product.parcela || 0),
-                        installmentCount: product.vezes || 12,
+                        installments: batchValue,
+                        installmentCount: batchCount,
                         barcode: product.ean || "",
                         quantity,
                         qrcode: product.urlProduto || "",

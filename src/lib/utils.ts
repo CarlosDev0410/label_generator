@@ -41,3 +41,35 @@ export function parseFormattedAmount(value: string | number): number {
 
   return parseFloat(valueStr) || 0;
 }
+
+const MIN_INSTALLMENT_VALUE = 4.99;
+const MAX_INSTALLMENTS = 12;
+
+/**
+ * Calcula a quantidade de parcelas e o valor de cada parcela,
+ * garantindo que o valor mínimo por parcela seja R$4,99.
+ *
+ * Regra: padrão é 12x. Se o preço não comportar 12 parcelas de R$4,99,
+ * a quantidade é reduzida até encontrar um número que funcione.
+ *
+ * @param priceTo - Preço "POR" do produto (string BR ou número)
+ * @returns { count: number; value: string } - Qtd de parcelas e valor formatado em PT-BR
+ */
+export function calculateInstallments(priceTo: string | number): { count: number; value: string } {
+  const price = parseFormattedAmount(priceTo);
+
+  if (price <= 0) {
+    return { count: 1, value: formatCurrency(0) };
+  }
+
+  // Testa de 12x até 1x, retorna a primeira quantidade onde parcela >= R$4,99
+  for (let n = MAX_INSTALLMENTS; n >= 1; n--) {
+    const installmentValue = price / n;
+    if (installmentValue >= MIN_INSTALLMENT_VALUE) {
+      return { count: n, value: formatCurrency(installmentValue) };
+    }
+  }
+
+  // Se nem 1x cabe (preço < R$4,99), retorna 1x com o valor total
+  return { count: 1, value: formatCurrency(price) };
+}
