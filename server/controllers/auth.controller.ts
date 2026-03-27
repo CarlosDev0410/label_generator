@@ -5,17 +5,20 @@ export class AuthController {
     static async login(req: Request, res: Response) {
         const { password } = req.body;
 
+        console.log(`[Auth] Tentativa de login. Senha recebida: ${password ? '***' : 'vazia'}`);
+        console.log(`[Auth] Senha esperada (tamanho): ${config.appPassword.length}`);
+
         if (!password) {
             return res.status(400).json({ error: 'Senha é obrigatória.' });
         }
 
-        if (password === config.appPassword) {
-            // Simple session token (for simplicity without extra packages like JWT)
-            // In a real app we'd use JWT. Here we return a simple but masked token.
+        if (password.trim() === config.appPassword.trim()) {
+            console.log('[Auth] Login bem sucedido');
             const sessionToken = Buffer.from(`session:${config.appPassword}`).toString('base64');
             return res.json({ token: sessionToken });
         }
 
+        console.warn(`[Auth] Falha no login. Recebido: "${password}" | Esperado: "${config.appPassword}"`);
         return res.status(401).json({ error: 'Senha incorreta.' });
     }
 
