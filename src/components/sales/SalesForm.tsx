@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Clock } from "lucide-react";
 
 interface SalesFormProps {
@@ -22,8 +22,8 @@ interface SalesFormProps {
     setQrcode: (v: string) => void;
     quantity: string;
     setQuantity: (v: string) => void;
-    is60x40: boolean;
-    setIs60x40: (v: boolean) => void;
+    labelFormat: string | null;
+    setLabelFormat: (v: string) => void;
     isLoadingProduct: boolean;
     onSkuSearch: (sku: string) => void;
 }
@@ -39,7 +39,7 @@ export function SalesForm(props: SalesFormProps) {
         barcode, setBarcode,
         qrcode, setQrcode,
         quantity, setQuantity,
-        is60x40, setIs60x40,
+        labelFormat, setLabelFormat,
         isLoadingProduct,
         onSkuSearch
     } = props;
@@ -76,7 +76,7 @@ export function SalesForm(props: SalesFormProps) {
             </div>
 
             {/* Row 2: Logic and Installments */}
-            <div className="col-span-6 md:col-span-3 space-y-3 relative">
+            <div className="col-span-12 md:col-span-3 space-y-3 relative">
                 <Label htmlFor="sku">SKU / REF</Label>
                 <Input
                     id="sku"
@@ -119,6 +119,7 @@ export function SalesForm(props: SalesFormProps) {
                     value={installments}
                     onChange={(e) => setInstallments(e.target.value)}
                     placeholder="0,00"
+                    disabled
                 />
             </div>
             <div className="col-span-6 md:col-span-3 space-y-3">
@@ -128,11 +129,12 @@ export function SalesForm(props: SalesFormProps) {
                     value={installmentCount}
                     onChange={(e) => setInstallmentCount(e.target.value)}
                     placeholder="Ex: 10"
+                    disabled
                 />
             </div>
 
             {/* Row 3: QR and Quantity */}
-            <div className="col-span-12 md:col-span-6 space-y-3">
+            <div className="col-span-12 md:col-span-5 space-y-3">
                 <Label htmlFor="qrcode">Link QR Code (Opcional)</Label>
                 <Input
                     id="qrcode"
@@ -141,8 +143,8 @@ export function SalesForm(props: SalesFormProps) {
                     placeholder="https://..."
                 />
             </div>
-            <div className="col-span-6 md:col-span-3 space-y-3">
-                <Label htmlFor="quantity">Etiquetas por Item</Label>
+            <div className="col-span-6 md:col-span-2 space-y-3">
+                <Label htmlFor="quantity">Etiquetas/Item</Label>
                 <Input
                     id="quantity"
                     type="number"
@@ -151,20 +153,26 @@ export function SalesForm(props: SalesFormProps) {
                     onChange={(e) => setQuantity(e.target.value)}
                 />
             </div>
-            <div className="col-span-6 md:col-span-3 flex flex-col justify-end space-y-3">
-                <div className="flex items-center space-x-2 h-9 mb-0.5">
-                    <Checkbox
-                        id="is60x40"
-                        checked={is60x40}
-                        onCheckedChange={(checked) => setIs60x40(checked as boolean)}
-                    />
-                    <Label
-                        htmlFor="is60x40"
-                        className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                        Formato 60x40
-                    </Label>
-                </div>
+            <div className="col-span-6 md:col-span-5 space-y-3">
+                <Label className="text-sm font-semibold">Tamanho da Etiqueta (L x A)</Label>
+                <RadioGroup 
+                    value={labelFormat || ""} 
+                    onValueChange={setLabelFormat}
+                    className="flex flex-wrap gap-4 pt-1"
+                >
+                    <div className="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all cursor-pointer">
+                        <RadioGroupItem value="60x80" id="fmt-60x80" />
+                        <Label htmlFor="fmt-60x80" className="text-xs font-bold cursor-pointer">60x80</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all cursor-pointer">
+                        <RadioGroupItem value="60x40" id="fmt-60x40" />
+                        <Label htmlFor="fmt-60x40" className="text-xs font-bold cursor-pointer">60x40</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted/50 px-3 py-2 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all cursor-pointer">
+                        <RadioGroupItem value="60x20" id="fmt-60x20" />
+                        <Label htmlFor="fmt-60x20" className="text-xs font-bold cursor-pointer">60x20</Label>
+                    </div>
+                </RadioGroup>
             </div>
         </div>
     );

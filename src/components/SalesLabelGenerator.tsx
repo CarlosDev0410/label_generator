@@ -40,7 +40,7 @@ export function SalesLabelGenerator() {
     const [barcode, setBarcode] = useState("");
     const [qrcode, setQrcode] = useState("");
     const [quantity, setQuantity] = useState("1");
-    const [is60x40, setIs60x40] = useState(false);
+    const [labelFormat, setLabelFormat] = useState<string | null>(null);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, isProcessing: false });
@@ -109,10 +109,20 @@ export function SalesLabelGenerator() {
 
     const handlePrint = async () => {
         if (items.length === 0) return;
+        
+        if (!labelFormat) {
+            toast({
+                title: "Formato não selecionado",
+                description: "Por favor, selecione um tamanho de etiqueta antes de gerar.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsGenerating(true);
         try {
             const labels = items.flatMap(item =>
-                Array(item.quantity).fill(generateSalesZpl(item, is60x40))
+                Array(item.quantity).fill(generateSalesZpl(item, labelFormat))
             );
             await saveZplAsPdf(labels, undefined, undefined, "etiquetas-vendas.pdf");
             toast({ title: "PDF Gerado", description: "O download das etiquetas começará em breve." });
@@ -356,8 +366,8 @@ export function SalesLabelGenerator() {
                         setQrcode={setQrcode}
                         quantity={quantity}
                         setQuantity={setQuantity}
-                        is60x40={is60x40}
-                        setIs60x40={setIs60x40}
+                        labelFormat={labelFormat}
+                        setLabelFormat={setLabelFormat}
                         isLoadingProduct={isLoadingProduct}
                         onSkuSearch={handleSkuSearch}
                     />
