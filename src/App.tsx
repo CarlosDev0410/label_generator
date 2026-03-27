@@ -1,30 +1,27 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogisticLabelGenerator } from "@/components/LogisticLabelGenerator";
 import { SalesLabelGenerator } from "@/components/SalesLabelGenerator";
 import { Toaster } from "@/components/ui/toaster";
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 md:py-10">
-        <Tabs defaultValue="logistic" className="space-y-6">
-          <div className="flex items-center justify-center w-full">
-            <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-              <TabsTrigger value="logistic">Logística</TabsTrigger>
-              <TabsTrigger value="sales">Vendas</TabsTrigger>
-            </TabsList>
+      {/* Header / Logo Section */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent tracking-tight">
+              Gerador de etiquetas
+            </h1>
           </div>
+          <div className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full border">
+            v2.0
+          </div>
+        </div>
+      </header>
 
-          <TabsContent value="logistic" className="mt-0 border-none outline-none">
-            <LogisticLabelGenerator />
-          </TabsContent>
-
-          <TabsContent value="sales" className="mt-0 border-none outline-none">
-            <SalesLabelGenerator />
-          </TabsContent>
-
-        </Tabs>
-      </div>
+      <main className="container mx-auto p-6 md:py-10">
+        <SalesLabelGenerator />
+      </main>
+      
       <Toaster />
     </div>
   );
